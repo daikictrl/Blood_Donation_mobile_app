@@ -2,11 +2,11 @@
 
 ## Tech Stack
 
-| Layer              | Technology                        | Role                                                              |
+| Layer              | Technology                        | Role                                                              | 
 |--------------------|-----------------------------------|-------------------------------------------------------------------|
-| Framework          | React Native + Expo SDK 52        | Cross-platform mobile app (iOS + Android)                        |
-| Navigation         | Expo Router v3                    | File-based routing with typed routes                             |
-| Styling            | NativeWind v4 (Tailwind RN)       | Utility-class styling system with custom tokens                  |
+| Framework          | React Native + Expo SDK 54       | Cross-platform mobile app (iOS + Android)                        |
+| Navigation         | Expo Router v4                    | File-based routing with typed routes                             |
+| Styling            | NativeWind v5 (Tailwind RN)       | Utility-class styling system with custom tokens                  |
 | State Management   | Zustand                           | Global client state (auth session, notifications, inventory)     |
 | Backend            | Supabase                          | Managed PostgreSQL, Auth, Storage, Realtime, Edge Functions      |
 | Database           | PostgreSQL (via Supabase)         | All persistent app data                                          |

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Blood_Donation",
-    "slug": "Blood_Donation",
+    "name": "BloodLink",
+    "slug": "blood-donation-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "blooddonation",
+    "scheme": "bloodlink",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -27,6 +27,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-font",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -38,7 +45,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

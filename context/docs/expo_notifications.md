@@ -1,0 +1,3 @@
+
+
+VISIT: https://docs.expo.dev/versions/latest/sdk/notifications/, and make all the research necessary for properly integrating and  using the notification feature in the app. By respecting the android and ios specific configuration guidelines and ensuring the notifications work as expected in both platforms. Also, make research on any additional dependencies or libraries that may be required for the proper integration of the notification feature in the app. 

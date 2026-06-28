@@ -1,0 +1,48 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './app/**/*.{js,jsx,ts,tsx}',
+    './components/**/*.{js,jsx,ts,tsx}',
+  ],
+  presets: [require('nativewind/preset')],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#C62828',
+        'primary-light': '#EF5350',
+        'primary-dark': '#8E0000',
+        emergency: '#FF1744',
+        background: '#F5F5F5',
+        surface: '#FFFFFF',
+        'surface-alt': '#FAFAFA',
+        'text-primary': '#1A1A1A',
+        'text-secondary': '#616161',
+        'text-disabled': '#BDBDBD',
+        border: '#E0E0E0',
+        divider: '#EEEEEE',
+        success: '#2E7D32',
+        'success-bg': '#E8F5E9',
+        warning: '#E65100',
+        'warning-bg': '#FFF3E0',
+        error: '#C62828',
+        'error-bg': '#FFEBEE',
+        info: '#1565C0',
+        'info-bg': '#E3F2FD',
+        blood: {
+          50: '#fdf3f4',
+          100: '#fbe5e7',
+          200: '#f6ced2',
+          300: '#efacb4',
+          400: '#e57a87',
+          500: '#d74859',
+          600: '#c22d41',
+          700: '#a32031',
+          800: '#881e2b',
+          900: '#731e27',
+          950: '#400b12',
+        },
+      },
+    },
+  },
+  plugins: [],
+};
