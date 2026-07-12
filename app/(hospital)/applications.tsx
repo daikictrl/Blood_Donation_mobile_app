@@ -12,11 +12,13 @@ import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 
 import { useHospitalStore } from '@/stores/hospital.store';
+import { useNotificationStore } from '@/stores/notification.store';
 
 type FilterTab = 'all' | 'pending' | 'approved' | 'rejected';
 
 export default function ApplicationsTabScreen() {
   const { requests, isLoading, error, fetchRequests } = useHospitalStore();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
@@ -72,11 +74,28 @@ export default function ApplicationsTabScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       {/* Header */}
-      <View className="px-4 pt-4 pb-3 bg-surface border-b border-border">
-        <Text className="text-2xl font-bold text-text-primary">Incoming Applications</Text>
-        <Text className="text-xs text-text-secondary mt-0.5">
-          Select a blood request to review donor applications
-        </Text>
+      <View className="px-4 pt-4 pb-3 bg-surface border-b border-border flex-row justify-between items-center">
+        <View className="flex-1">
+          <Text className="text-2xl font-bold text-text-primary">Incoming Applications</Text>
+          <Text className="text-xs text-text-secondary mt-0.5">
+            Select a blood request to review donor applications
+          </Text>
+        </View>
+
+        {/* Bell Icon with Dynamic Badge */}
+        <Pressable
+          onPress={() => router.push('/(hospital)/notifications')}
+          className="p-2 relative active:opacity-75"
+        >
+          <Feather name="bell" size={24} className="text-text-primary" />
+          {unreadCount > 0 && (
+            <View className="absolute right-1 top-1 bg-primary w-4.5 h-4.5 rounded-full items-center justify-center border border-surface">
+              <Text className="text-[9px] font-bold text-white leading-none">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       {/* Filter Tabs */}

@@ -8,7 +8,8 @@ export type NotificationType =
   | 'application_status'
   | 'appointment'
   | 'emergency'
-  | 'donation_confirmed';
+  | 'donation_confirmed'
+  | 'new_application';
 
 export interface DonorProfile {
   id: string;

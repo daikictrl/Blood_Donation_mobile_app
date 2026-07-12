@@ -16,13 +16,17 @@ interface AuthStore {
   setRole: (role: UserRole | null) => void;
   setLoading: (val: boolean) => void;
   setError: (error: string | null) => void;
-  signUp: (email: string, password: string, role: UserRole) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   verifyAndResetPassword: (email: string, token: string, password: string) => Promise<void>;
   fetchRole: (userId: string) => Promise<void>;
   clearError: () => void;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -36,7 +40,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
 
-  signUp: async (email, password, role) => {
+  signUp: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
       const { error } = await supabase.auth.signUp({
@@ -44,14 +48,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
         password,
         options: {
           data: {
-            role,
+            role: 'donor',
           },
         },
       });
 
       if (error) throw error;
-    } catch (err: any) {
-      set({ error: err.message || 'An error occurred during registration' });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'An error occurred during registration') });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -82,8 +86,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
           role: profileData?.role ?? null,
         });
       }
-    } catch (err: any) {
-      set({ error: err.message || 'An error occurred during login' });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'An error occurred during login') });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -95,7 +99,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       // Unregister push token before signing out to prevent cross-session notifications
       await unregisterPushToken().catch((err) => {
-        console.error('Failed to unregister push token on sign out:', err);
+        console.log('Failed to unregister push token on sign out:', err);
       });
 
       const { error } = await supabase.auth.signOut();
@@ -107,8 +111,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
       useNotificationStore.getState().reset();
 
       set({ session: null, role: null });
-    } catch (err: any) {
-      set({ error: err.message || 'An error occurred during logout' });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'An error occurred during logout') });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -120,8 +124,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
       if (error) throw error;
-    } catch (err: any) {
-      set({ error: err.message || 'An error occurred during password reset request' });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'An error occurred during password reset request') });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -163,8 +167,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
         session: verifyData.session,
         role: profileData?.role ?? null,
       });
-    } catch (err: any) {
-      set({ error: err.message || 'An error occurred during password reset' });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'An error occurred during password reset') });
       throw err;
     } finally {
       set({ isLoading: false });
@@ -182,8 +186,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
       if (error) throw error;
       set({ role: data?.role ?? null });
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to fetch user role' });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to fetch user role') });
       throw err;
     } finally {
       set({ isLoading: false });

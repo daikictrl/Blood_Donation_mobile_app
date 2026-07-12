@@ -13,6 +13,7 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 
 import { useDonorStore } from '@/stores/donor.store';
+import { useNotificationStore } from '@/stores/notification.store';
 import { DonorApplication } from '@/types';
 import { DonorApplicationCard } from '@/components/donor/DonorApplicationCard';
 
@@ -27,6 +28,8 @@ export default function DonorApplicationsScreen() {
     subscribeToApplications,
     unsubscribeFromApplications,
   } = useDonorStore();
+
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -106,11 +109,28 @@ export default function DonorApplicationsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       {/* Header */}
-      <View className="px-4 pt-4 pb-3 bg-surface border-b border-border">
-        <Text className="text-2xl font-bold text-text-primary">My Applications</Text>
-        <Text className="text-xs text-text-secondary mt-0.5">
-          Track the status of your blood donation applications
-        </Text>
+      <View className="px-4 pt-4 pb-3 bg-surface border-b border-border flex-row justify-between items-center">
+        <View className="flex-1">
+          <Text className="text-2xl font-bold text-text-primary">My Applications</Text>
+          <Text className="text-xs text-text-secondary mt-0.5">
+            Track the status of your blood donation applications
+          </Text>
+        </View>
+
+        {/* Bell Icon with Dynamic Badge */}
+        <Pressable
+          onPress={() => router.push('/(donor)/notifications')}
+          className="p-2 relative active:opacity-75"
+        >
+          <Feather name="bell" size={24} className="text-text-primary" />
+          {unreadCount > 0 && (
+            <View className="absolute right-1 top-1 bg-primary w-4.5 h-4.5 rounded-full items-center justify-center border border-surface">
+              <Text className="text-[9px] font-bold text-white leading-none">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       {/* Filter Tabs */}

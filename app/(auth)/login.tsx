@@ -10,11 +10,12 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Link } from 'expo-router';
+import { Link } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Feather } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useAuthStore } from '@/stores/auth.store';
 
 const loginSchema = z.object({
@@ -32,7 +33,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
-  const router = useRouter();
   const { signIn, isLoading, error, clearError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -83,12 +83,15 @@ export default function LoginScreen() {
           <View className="flex-1 justify-center py-6">
           {/* Logo / Header */}
           <View className="items-center mb-8">
-            <View className="bg-primary-light/10 p-4 rounded-full mb-3">
-              <Feather name="droplet" size={48} color="#C62828" />
-            </View>
-            <Text className="text-3xl font-bold text-text-primary">BloodLink</Text>
+            <Image
+              source={require('@/assets/images/logo.png')}
+              style={{ width: 80, height: 80, borderRadius: 20 }}
+              contentFit="cover"
+              transition={200}
+            />
+            <Text className="text-3xl font-bold text-text-primary mt-4">BloodLink</Text>
             <Text className="text-sm text-text-secondary mt-1 text-center">
-              Connecting blood donors and hospitals in Cameroon
+              Donors register here. Hospital staff sign in with the authorized hospital account.
             </Text>
           </View>
 
@@ -228,11 +231,11 @@ export default function LoginScreen() {
           {/* Sign Up Navigation */}
           <View className="flex-row justify-center items-center mt-8 gap-1">
             <Text className="text-sm text-text-secondary">
-              Don't have an account?
+Need a donor account?
             </Text>
             <Link href="/(auth)/register" asChild>
               <Pressable hitSlop={12}>
-                <Text className="text-sm font-bold text-primary">Sign Up</Text>
+                <Text className="text-sm font-bold text-primary">Register</Text>
               </Pressable>
             </Link>
           </View>

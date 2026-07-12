@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { AppNotification } from '@/types';
 import { useNotificationStore } from '@/stores/notification.store';
 
@@ -17,6 +18,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 }) => {
   const router = useRouter();
   const markAsRead = useNotificationStore((state) => state.markAsRead);
+  const deleteNotification = useNotificationStore((state) => state.deleteNotification);
 
   const getIconConfig = () => {
     switch (notification.type) {
@@ -36,6 +38,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         return { name: 'calendar' as const, color: '#1565C0', bgClass: 'bg-info-bg' }; // info blue
       case 'donation_confirmed':
         return { name: 'heart' as const, color: '#2E7D32', bgClass: 'bg-success-bg' }; // success green
+      case 'new_application':
+        return { name: 'file-text' as const, color: '#E65100', bgClass: 'bg-warning-bg' }; // warning orange
       default:
         return { name: 'bell' as const, color: '#616161', bgClass: 'bg-divider' };
     }
@@ -78,11 +82,19 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         case 'donation_confirmed':
           router.push('/(donor)/history');
           break;
+        case 'new_application':
+          if (data.request_id) {
+            router.push({
+              pathname: '/(hospital)/applications/[requestId]',
+              params: { requestId: data.request_id as string }
+            });
+          }
+          break;
         default:
           break;
       }
     } catch (err) {
-      console.error('Failed to navigate from notification tap:', err);
+      console.log('Failed to navigate from notification tap:', err);
     }
   };
 
@@ -90,13 +102,31 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     addSuffix: true,
   });
 
+  const renderRightActions = () => (
+    <View className="bg-error justify-center items-end w-full h-full rounded-2xl mb-3 px-6">
+      <Feather name="trash-2" size={22} color="#FFFFFF" />
+    </View>
+  );
+
+  const renderLeftActions = () => (
+    <View className="bg-error justify-center items-start w-full h-full rounded-2xl mb-3 px-6">
+      <Feather name="trash-2" size={22} color="#FFFFFF" />
+    </View>
+  );
+
   return (
-    <Pressable
-      onPress={handlePress}
-      className={`bg-surface rounded-2xl p-4 border border-border shadow shadow-black/5 flex-row items-start mb-3 ${
-        !notification.read ? 'border-l-4 border-l-primary' : ''
-      }`}
+    <Swipeable
+      renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
+      onSwipeableOpen={() => deleteNotification(notification.id)}
+      containerStyle={{ backgroundColor: 'transparent' }}
     >
+      <Pressable
+        onPress={handlePress}
+        className={`bg-surface rounded-2xl p-4 border border-border shadow shadow-black/5 flex-row items-start mb-3 ${
+          !notification.read ? 'border-l-4 border-l-primary' : ''
+        }`}
+      >
       <View
         className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${iconConfig.bgClass}`}
       >
@@ -123,6 +153,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
         <Text className="text-xs text-text-disabled mt-2">{formattedTime}</Text>
       </View>
-    </Pressable>
+      </Pressable>
+    </Swipeable>
   );
 };

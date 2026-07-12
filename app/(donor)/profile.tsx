@@ -25,6 +25,8 @@ import { format, parseISO } from 'date-fns';
 
 import { useDonorStore } from '@/stores/donor.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { useNotificationStore } from '@/stores/notification.store';
+import { useRouter } from 'expo-router';
 import { checkEligibility } from '@/lib/eligibility';
 import { BloodGroup } from '@/types';
 
@@ -191,6 +193,8 @@ function CustomDatePicker({
 export default function DonorProfileScreen() {
   const { profile, isLoading, error, fetchProfile, updateProfile, uploadAvatar } = useDonorStore();
   const { signOut } = useAuthStore();
+  const router = useRouter();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [dobPickerVisible, setDobPickerVisible] = useState(false);
@@ -416,7 +420,7 @@ export default function DonorProfileScreen() {
         >
           {/* Header */}
           <View className="mb-6 flex-row justify-between items-center">
-            <View>
+            <View className="flex-grow flex-1 mr-4">
               <Text className="text-2xl font-bold text-text-primary">
                 {profile ? 'My Profile' : 'Complete Profile'}
               </Text>
@@ -424,6 +428,22 @@ export default function DonorProfileScreen() {
                 {profile ? 'Manage your information and eligibility' : 'Enter details to start donating'}
               </Text>
             </View>
+
+            {/* Bell Icon with Dynamic Badge */}
+            <Pressable
+              onPress={() => router.push('/(donor)/notifications')}
+              className="p-2 relative active:opacity-75 mr-2"
+            >
+              <Feather name="bell" size={24} className="text-text-primary" />
+              {unreadCount > 0 && (
+                <View className="absolute right-1 top-1 bg-primary w-4.5 h-4.5 rounded-full items-center justify-center border border-surface">
+                  <Text className="text-[9px] font-bold text-white leading-none">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
             {profile && !isEditMode && (
               <Pressable
                 onPress={() => setIsEditMode(true)}

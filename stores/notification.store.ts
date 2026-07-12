@@ -11,6 +11,7 @@ interface NotificationState {
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
   subscribeToNotifications: () => Promise<void>;
   unsubscribeFromNotifications: () => Promise<void>;
   reset: () => void;
@@ -36,7 +37,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching notifications:', error.message);
+        console.log('Error fetching notifications:', error.message);
         set({ loading: false });
         return;
       }
@@ -44,7 +45,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       const unread = (data || []).filter((n) => !n.read).length;
       set({ notifications: data || [], unreadCount: unread, loading: false });
     } catch (err) {
-      console.error('Failed to fetch notifications:', err);
+      console.log('Failed to fetch notifications:', err);
       set({ loading: false });
     }
   },
@@ -71,12 +72,12 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         .eq('id', id);
 
       if (error) {
-        console.error('Error syncing markAsRead to database:', error.message);
+        console.log('Error syncing markAsRead to database:', error.message);
         // Rollback on error
         set({ notifications, unreadCount });
       }
     } catch (err) {
-      console.error('Failed to mark notification as read:', err);
+      console.log('Failed to mark notification as read:', err);
     }
   },
 
@@ -99,12 +100,43 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         .eq('read', false);
 
       if (error) {
-        console.error('Error syncing markAllAsRead to database:', error.message);
+        console.log('Error syncing markAllAsRead to database:', error.message);
         // Rollback on error
         set({ notifications, unreadCount });
       }
     } catch (err) {
-      console.error('Failed to mark all notifications as read:', err);
+      console.log('Failed to mark all notifications as read:', err);
+    }
+  },
+
+  deleteNotification: async (id: string) => {
+    try {
+      const { notifications, unreadCount } = get();
+      const targetNotif = notifications.find((n) => n.id === id);
+      
+      if (!targetNotif) return;
+
+      const wasUnread = !targetNotif.read;
+
+      // Optimistically update local state
+      const updated = notifications.filter((n) => n.id !== id);
+      set({
+        notifications: updated,
+        unreadCount: wasUnread ? Math.max(0, unreadCount - 1) : unreadCount,
+      });
+
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.log('Error syncing deleteNotification to database:', error.message);
+        // Rollback on error
+        set({ notifications, unreadCount });
+      }
+    } catch (err) {
+      console.log('Failed to delete notification:', err);
     }
   },
 
@@ -147,7 +179,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       set({ realtimeChannel: channel });
     } catch (err) {
-      console.error('Failed to subscribe to notifications realtime updates:', err);
+      console.log('Failed to subscribe to notifications realtime updates:', err);
     }
   },
 
@@ -160,7 +192,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       set({ realtimeChannel: null });
       console.log('Notification subscription channel removed.');
     } catch (err) {
-      console.error('Failed to unsubscribe from notifications:', err);
+      console.log('Failed to unsubscribe from notifications:', err);
     }
   },
 

@@ -14,6 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useHospitalStore } from '@/stores/hospital.store';
+import { useNotificationStore } from '@/stores/notification.store';
+import { useRouter } from 'expo-router';
 import { BloodGroup } from '@/types';
 
 export default function BloodInventory() {
@@ -29,6 +31,9 @@ export default function BloodInventory() {
     subscribeToInventory,
     unsubscribeFromInventory,
   } = useHospitalStore();
+
+  const router = useRouter();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   const [refreshing, setRefreshing] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<BloodGroup | null>(null);
@@ -200,9 +205,27 @@ export default function BloodInventory() {
             <Text className="text-2xl font-bold text-text-primary">Blood Stock</Text>
             <Text className="text-sm text-text-secondary mt-1">Manage your blood inventory levels</Text>
           </View>
-          <View className="bg-primary/10 px-4 py-2 rounded-2xl items-end justify-center min-h-[48px]">
-            <Text className="text-[10px] text-primary font-bold tracking-wider uppercase">Total Stock</Text>
-            <Text className="text-xl font-bold text-primary">{totalStock} {totalStock === 1 ? 'unit' : 'units'}</Text>
+          
+          <View className="flex-row items-center gap-2">
+            {/* Bell Icon with Dynamic Badge */}
+            <Pressable
+              onPress={() => router.push('/(hospital)/notifications')}
+              className="p-2 relative active:opacity-75 mr-1"
+            >
+              <Feather name="bell" size={24} className="text-text-primary" />
+              {unreadCount > 0 && (
+                <View className="absolute right-1 top-1 bg-primary w-4.5 h-4.5 rounded-full items-center justify-center border border-surface">
+                  <Text className="text-[9px] font-bold text-white leading-none">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
+            <View className="bg-primary/10 px-4 py-2 rounded-2xl items-end justify-center min-h-[48px]">
+              <Text className="text-[10px] text-primary font-bold tracking-wider uppercase">Total Stock</Text>
+              <Text className="text-xl font-bold text-primary">{totalStock} {totalStock === 1 ? 'unit' : 'units'}</Text>
+            </View>
           </View>
         </View>
 

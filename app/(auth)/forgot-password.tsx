@@ -17,36 +17,19 @@ import { z } from 'zod';
 import { Feather } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/auth.store';
 
-// Validation Schema for Step 1 (Request OTP)
+// Validation Schema (Email is validated in step 1; code/passwords are validated manually on step 2 submit)
 const forgotPasswordSchema = z.object({
   email: z
     .string()
     .trim()
     .min(1, 'Email is required')
     .email('Invalid email address'),
+  code: z.string().optional(),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
-
-// Validation Schema for Step 2 (Reset Password)
-const resetPasswordSchema = z.object({
-  code: z
-    .string()
-    .trim()
-    .length(6, 'Verification code must be exactly 6 digits')
-    .regex(/^\d+$/, 'Code must be numeric'),
-  password: z
-    .string()
-    .min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z
-    .string()
-    .min(1, 'Please confirm your password'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
-
-type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 export default function ForgotPasswordScreen() {
   const { resetPassword, verifyAndResetPassword, isLoading, error, clearError } = useAuthStore();
@@ -62,27 +45,17 @@ export default function ForgotPasswordScreen() {
     return () => clearError();
   }, [step]);
 
-  // Form for Step 1
   const {
-    control: emailControl,
-    handleSubmit: handleEmailSubmit,
-    formState: { errors: emailErrors },
+    control,
+    handleSubmit,
+    setError,
+    clearErrors,
+    formState: { errors },
+    reset,
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: '',
-    },
-  });
-
-  // Form for Step 2
-  const {
-    control: resetControl,
-    handleSubmit: handleResetSubmit,
-    formState: { errors: resetErrors },
-    reset: resetForm2,
-  } = useForm<ResetPasswordFormData>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
       code: '',
       password: '',
       confirmPassword: '',
@@ -99,9 +72,34 @@ export default function ForgotPasswordScreen() {
     }
   };
 
-  const onResetSubmit = async (data: ResetPasswordFormData) => {
+  const onResetSubmit = async (data: ForgotPasswordFormData) => {
+    const code = data.code?.trim() || '';
+    const password = data.password || '';
+    const confirmPassword = data.confirmPassword || '';
+
+    let hasError = false;
+    clearErrors(['code', 'password', 'confirmPassword']);
+
+    if (code.length !== 6 && code.length !== 8) {
+      setError('code', { type: 'manual', message: 'Verification code must be 6 or 8 characters' });
+      hasError = true;
+    } else if (!/^[a-zA-Z0-9]+$/.test(code)) {
+      setError('code', { type: 'manual', message: 'Verification code must be alphanumeric' });
+      hasError = true;
+    }
+    if (password.length < 6) {
+      setError('password', { type: 'manual', message: 'Password must be at least 6 characters' });
+      hasError = true;
+    }
+    if (password !== confirmPassword) {
+      setError('confirmPassword', { type: 'manual', message: "Passwords don't match" });
+      hasError = true;
+    }
+
+    if (hasError) return;
+
     try {
-      await verifyAndResetPassword(submittedEmail, data.code, data.password);
+      await verifyAndResetPassword(submittedEmail, code, password);
       // If successful, Zustand auth listener triggers app redirect.
     } catch (err) {
       // Error handled by store
@@ -145,8 +143,8 @@ export default function ForgotPasswordScreen() {
             </Text>
             <Text className="text-sm text-text-secondary mt-1">
               {step === 1
-                ? 'Enter your email to receive a 6-digit verification code'
-                : `We sent a 6-digit code to ${submittedEmail}`}
+                ? 'Enter your email to receive an 8-digit verification code'
+                : `We sent an 8-digit code to ${submittedEmail}`}
             </Text>
           </View>
 
@@ -178,12 +176,12 @@ export default function ForgotPasswordScreen() {
                   Email Address
                 </Text>
                 <Controller
-                  control={emailControl}
+                  control={control}
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View
                       className={`bg-surface border ${
-                        emailErrors.email ? 'border-error' : 'border-border'
+                        errors.email ? 'border-error' : 'border-border'
                       } rounded-xl px-4 py-3 min-h-[48px] flex-row items-center`}
                     >
                       <Feather
@@ -200,15 +198,15 @@ export default function ForgotPasswordScreen() {
                         autoCorrect={false}
                         onBlur={onBlur}
                         onChangeText={onChange}
-                        value={value}
+                        value={value || ''}
                         editable={!isLoading}
                       />
                     </View>
                   )}
                 />
-                {emailErrors.email && (
+                {errors.email && (
                   <Text className="text-xs font-semibold text-error mt-1 ml-1">
-                    {emailErrors.email.message}
+                    {errors.email.message}
                   </Text>
                 )}
               </View>
@@ -218,7 +216,7 @@ export default function ForgotPasswordScreen() {
                 className={`rounded-xl min-h-[48px] items-center justify-center px-6 mt-2 ${
                   isLoading ? 'bg-primary-light' : 'bg-primary'
                 }`}
-                onPress={handleEmailSubmit(onEmailSubmit)}
+                onPress={handleSubmit(onEmailSubmit)}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -248,15 +246,15 @@ export default function ForgotPasswordScreen() {
               {/* OTP Code */}
               <View>
                 <Text className="text-sm font-semibold text-text-secondary mb-2">
-                  Verification Code (6 Digits)
+                  Verification Code (8 Digits)
                 </Text>
                 <Controller
-                  control={resetControl}
+                  control={control}
                   name="code"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View
                       className={`bg-surface border ${
-                        resetErrors.code ? 'border-error' : 'border-border'
+                        errors.code ? 'border-error' : 'border-border'
                       } rounded-xl px-4 py-3 min-h-[48px] flex-row items-center`}
                     >
                       <Feather
@@ -266,23 +264,25 @@ export default function ForgotPasswordScreen() {
                       />
                       <TextInput
                         className="flex-1 text-base text-text-primary ml-3"
-                        placeholder="Enter 6-digit code"
+                        placeholder="Enter 8-digit code"
                         placeholderTextColor="#BDBDBD"
                         keyboardType="number-pad"
-                        maxLength={6}
+                        maxLength={8}
                         autoCapitalize="none"
                         autoCorrect={false}
+                        autoComplete="off"
+                        textContentType="none"
                         onBlur={onBlur}
                         onChangeText={onChange}
-                        value={value}
+                        value={value || ''}
                         editable={!isLoading}
                       />
                     </View>
                   )}
                 />
-                {resetErrors.code && (
+                {errors.code && (
                   <Text className="text-xs font-semibold text-error mt-1 ml-1">
-                    {resetErrors.code.message}
+                    {errors.code.message}
                   </Text>
                 )}
               </View>
@@ -293,12 +293,12 @@ export default function ForgotPasswordScreen() {
                   New Password
                 </Text>
                 <Controller
-                  control={resetControl}
+                  control={control}
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View
                       className={`bg-surface border ${
-                        resetErrors.password ? 'border-error' : 'border-border'
+                        errors.password ? 'border-error' : 'border-border'
                       } rounded-xl px-4 py-3 min-h-[48px] flex-row items-center`}
                     >
                       <Feather
@@ -315,7 +315,7 @@ export default function ForgotPasswordScreen() {
                         autoCorrect={false}
                         onBlur={onBlur}
                         onChangeText={onChange}
-                        value={value}
+                        value={value || ''}
                         editable={!isLoading}
                       />
                       <Pressable
@@ -331,9 +331,9 @@ export default function ForgotPasswordScreen() {
                     </View>
                   )}
                 />
-                {resetErrors.password && (
+                {errors.password && (
                   <Text className="text-xs font-semibold text-error mt-1 ml-1">
-                    {resetErrors.password.message}
+                    {errors.password.message}
                   </Text>
                 )}
               </View>
@@ -344,12 +344,12 @@ export default function ForgotPasswordScreen() {
                   Confirm Password
                 </Text>
                 <Controller
-                  control={resetControl}
+                  control={control}
                   name="confirmPassword"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View
                       className={`bg-surface border ${
-                        resetErrors.confirmPassword ? 'border-error' : 'border-border'
+                        errors.confirmPassword ? 'border-error' : 'border-border'
                       } rounded-xl px-4 py-3 min-h-[48px] flex-row items-center`}
                     >
                       <Feather
@@ -366,7 +366,7 @@ export default function ForgotPasswordScreen() {
                         autoCorrect={false}
                         onBlur={onBlur}
                         onChangeText={onChange}
-                        value={value}
+                        value={value || ''}
                         editable={!isLoading}
                       />
                       <Pressable
@@ -382,9 +382,9 @@ export default function ForgotPasswordScreen() {
                     </View>
                   )}
                 />
-                {resetErrors.confirmPassword && (
+                {errors.confirmPassword && (
                   <Text className="text-xs font-semibold text-error mt-1 ml-1">
-                    {resetErrors.confirmPassword.message}
+                    {errors.confirmPassword.message}
                   </Text>
                 )}
               </View>
@@ -394,7 +394,7 @@ export default function ForgotPasswordScreen() {
                 className={`rounded-xl min-h-[48px] items-center justify-center px-6 mt-2 ${
                   isLoading ? 'bg-primary-light' : 'bg-primary'
                 }`}
-                onPress={handleResetSubmit(onResetSubmit)}
+                onPress={handleSubmit(onResetSubmit)}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -424,7 +424,7 @@ export default function ForgotPasswordScreen() {
                   hitSlop={12}
                   onPress={() => {
                     setStep(1);
-                    resetForm2();
+                    reset();
                   }}
                   disabled={isLoading}
                   className="flex-row items-center gap-2"

@@ -45,7 +45,7 @@ export default function DonorFeedScreen() {
           fetchRequests(),
           fetchNotifications(),
           registerPushToken().catch((err) =>
-            console.error('Failed to register push token:', err)
+            console.log('Failed to register push token:', err)
           ),
         ]);
       } catch (err) {

@@ -38,6 +38,7 @@ export default function ScheduleAppointmentScreen() {
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
 
   // Form states
   const [scheduledDate, setScheduledDate] = useState<Date>(() => {
@@ -100,12 +101,12 @@ export default function ScheduleAppointmentScreen() {
     loadData();
   }, [applicationId]);
 
-  // Pre-fill location from hospital profile if not set and no existing appointment
+  // Pre-fill location from hospital profile if not set and no existing active appointment
   useEffect(() => {
-    if (profile && !location && !appointment) {
+    if (profile && !location && (!appointment || rescheduling)) {
       setLocation(profile.address || '');
     }
-  }, [profile, appointment]);
+  }, [profile, appointment, rescheduling]);
 
   const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
@@ -148,6 +149,7 @@ export default function ScheduleAppointmentScreen() {
       });
 
       setAppointment(apt);
+      setRescheduling(false);
       Alert.alert('Success', 'Appointment scheduled successfully.');
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to schedule appointment.');
@@ -257,7 +259,7 @@ export default function ScheduleAppointmentScreen() {
           <Feather name="chevron-left" size={24} className="text-text-primary" />
         </Pressable>
         <Text className="text-lg font-bold text-text-primary ml-2">
-          {appointment ? 'Appointment Details' : 'Schedule Appointment'}
+          {appointment && !rescheduling ? 'Appointment Details' : 'Schedule Appointment'}
         </Text>
       </View>
 
@@ -317,7 +319,7 @@ export default function ScheduleAppointmentScreen() {
           </View>
 
           {/* APPOINTMENT FORM MODE */}
-          {!appointment ? (
+          {!appointment || rescheduling ? (
             <View className="bg-surface rounded-2xl p-5 border border-border shadow-sm shadow-black/5">
               <Text className="text-base font-bold text-text-primary mb-4">
                 Schedule Donation Date & Time
@@ -563,6 +565,19 @@ export default function ScheduleAppointmentScreen() {
                     <Text className="text-error font-semibold text-base">
                       {submitting ? 'Cancelling...' : 'Cancel Appointment'}
                     </Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {/* Reschedule Button (Only visible if appointment is cancelled) */}
+              {appointment.status === 'cancelled' && (
+                <View className="mt-4 border-t border-divider pt-4">
+                  <Pressable
+                    onPress={() => setRescheduling(true)}
+                    className="bg-primary rounded-xl min-h-[48px] items-center justify-center px-6 active:opacity-90 flex-row"
+                  >
+                    <Feather name="calendar" size={16} color="#FFFFFF" className="mr-2" />
+                    <Text className="text-white font-bold text-base">Schedule New Appointment</Text>
                   </Pressable>
                 </View>
               )}

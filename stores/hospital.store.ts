@@ -315,7 +315,7 @@ export const useHospitalStore = create<HospitalStore>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('donor_applications')
-        .select('*, donor:donors(*, is_eligible)')
+        .select('*, donor:donors(*, is_eligible), appointments(*)')
         .eq('request_id', requestId)
         .order('created_at', { ascending: false });
 
@@ -465,10 +465,11 @@ export const useHospitalStore = create<HospitalStore>((set, get) => ({
         .from('appointments')
         .select('*')
         .eq('application_id', applicationId)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       if (error) throw error;
-      return data as Appointment | null;
+      return data && data.length > 0 ? (data[0] as Appointment) : null;
     } catch (err: any) {
       set({ error: err.message || 'Failed to fetch appointment' });
       throw err;
@@ -490,6 +491,25 @@ export const useHospitalStore = create<HospitalStore>((set, get) => ({
         .single();
 
       if (error) throw error;
+
+      // Update applications state in store
+      set((state) => {
+        const updatedApplications = state.applications.map((app) => {
+          if (app.id === appointmentData.application_id) {
+            const appointments = app.appointments ? [...app.appointments] : [];
+            const existingIdx = appointments.findIndex((apt) => apt.id === data.id);
+            if (existingIdx > -1) {
+              appointments[existingIdx] = data as Appointment;
+            } else {
+              appointments.push(data as Appointment);
+            }
+            return { ...app, appointments };
+          }
+          return app;
+        });
+        return { applications: updatedApplications };
+      });
+
       return data as Appointment;
     } catch (err: any) {
       set({ error: err.message || 'Failed to schedule appointment' });
@@ -513,6 +533,25 @@ export const useHospitalStore = create<HospitalStore>((set, get) => ({
         .single();
 
       if (error) throw error;
+
+      // Update applications state in store
+      set((state) => {
+        const updatedApplications = state.applications.map((app) => {
+          if (app.id === data.application_id) {
+            const appointments = app.appointments ? [...app.appointments] : [];
+            const existingIdx = appointments.findIndex((apt) => apt.id === data.id);
+            if (existingIdx > -1) {
+              appointments[existingIdx] = data as Appointment;
+            } else {
+              appointments.push(data as Appointment);
+            }
+            return { ...app, appointments };
+          }
+          return app;
+        });
+        return { applications: updatedApplications };
+      });
+
       return data as Appointment;
     } catch (err: any) {
       set({ error: err.message || 'Failed to cancel appointment' });
@@ -527,7 +566,7 @@ export const useHospitalStore = create<HospitalStore>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('donor_applications')
-        .select('*, donor:donors(*)')
+        .select('*, donor:donors(*), appointments(*)')
         .eq('id', applicationId)
         .maybeSingle();
 
@@ -569,6 +608,25 @@ export const useHospitalStore = create<HospitalStore>((set, get) => ({
         .single();
 
       if (fetchError) throw fetchError;
+
+      // Update applications state in store
+      set((state) => {
+        const updatedApplications = state.applications.map((app) => {
+          if (app.id === appointment.application_id) {
+            const appointments = app.appointments ? [...app.appointments] : [];
+            const existingIdx = appointments.findIndex((apt) => apt.id === appointment.id);
+            if (existingIdx > -1) {
+              appointments[existingIdx] = appointment as Appointment;
+            } else {
+              appointments.push(appointment as Appointment);
+            }
+            return { ...app, appointments };
+          }
+          return app;
+        });
+        return { applications: updatedApplications };
+      });
+
       return appointment as Appointment;
     } catch (err: any) {
       set({ error: err.message || 'Failed to confirm donation' });

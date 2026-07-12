@@ -91,7 +91,7 @@ BEGIN
 
   -- Fire the Edge Function asynchronously via pg_net
   PERFORM net.http_post(
-    url := 'https://yibyxewmduhjkcfssmqk.supabase.co/functions/v1/dispatch-notifications',
+    url := 'https://lbkbgwevmnngojnwguro.supabase.co/functions/v1/dispatch-notifications',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || service_role_key

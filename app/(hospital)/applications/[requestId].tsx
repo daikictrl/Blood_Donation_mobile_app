@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 
 import { useHospitalStore } from '@/stores/hospital.store';
@@ -28,11 +28,15 @@ export default function ReviewApplicationsScreen() {
     approveApplication,
     rejectApplication,
     deleteApplication,
+    confirmDonation,
+    cancelAppointment,
   } = useHospitalStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
+
+  const requestApplications = applications.filter((app) => app.request_id === requestId);
 
   // Find request info
   const request = requests.find((r) => r.id === requestId);
@@ -53,9 +57,12 @@ export default function ReviewApplicationsScreen() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [requestId]);
+  // Fetch applications on screen focus or when requestId changes
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData(false);
+    }, [requestId])
+  );
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -160,6 +167,55 @@ export default function ReviewApplicationsScreen() {
     }
   };
 
+  const handleConfirmDonation = (appointmentId: string, donorId: string, bloodGroup: string) => {
+    Alert.alert(
+      'Confirm Donation',
+      'Confirm that this donation has been completed?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, Confirm',
+          onPress: async () => {
+            setActioningId(appointmentId);
+            try {
+              await confirmDonation(appointmentId, donorId, bloodGroup, 1, null);
+              Alert.alert('Success', 'Donation confirmed. Inventory updated.');
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to confirm donation.');
+            } finally {
+              setActioningId(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCancelAppointment = (appointmentId: string) => {
+    Alert.alert(
+      'Cancel Appointment',
+      'Are you sure you want to cancel this appointment?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            setActioningId(appointmentId);
+            try {
+              await cancelAppointment(appointmentId);
+              Alert.alert('Success', 'Appointment has been cancelled.');
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to cancel appointment.');
+            } finally {
+              setActioningId(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
 
 
   const urgencyLabel = request?.is_emergency || request?.urgency_level === 'emergency'
@@ -250,7 +306,7 @@ export default function ReviewApplicationsScreen() {
           )}
 
           {/* List or Empty State */}
-          {applications.length === 0 ? (
+          {requestApplications.length === 0 ? (
             <View className="items-center justify-center py-20 bg-surface rounded-2xl border border-border px-6 shadow shadow-black/5 mt-2">
               <View className="w-16 h-16 rounded-full bg-divider items-center justify-center mb-4">
                 <Feather name="users" size={32} className="text-text-disabled" />
@@ -264,14 +320,21 @@ export default function ReviewApplicationsScreen() {
             </View>
           ) : (
             <View className="flex-col gap-3">
-              {applications.map((app) => (
+              {requestApplications.map((app) => (
                 <ApplicationCard
                   key={app.id}
                   application={app}
                   onApprove={handleApprove}
                   onReject={handleReject}
                   onDelete={handleDelete}
-                  isActioning={actioningId === app.id}
+                  onConfirmDonation={handleConfirmDonation}
+                  onCancelAppointment={handleCancelAppointment}
+                  isActioning={
+                    actioningId === app.id ||
+                    !!(app.appointments &&
+                      app.appointments.length > 0 &&
+                      actioningId === app.appointments[app.appointments.length - 1].id)
+                  }
                 />
               ))}
             </View>

@@ -12,6 +12,8 @@ interface ApplicationCardProps {
   onApprove: (id: string, isEligible: boolean) => void;
   onReject: (id: string) => void;
   onDelete: (id: string) => void;
+  onConfirmDonation: (appointmentId: string, donorId: string, bloodGroup: string) => void;
+  onCancelAppointment: (appointmentId: string) => void;
   isActioning: boolean;
 }
 
@@ -20,10 +22,12 @@ export function ApplicationCard({
   onApprove,
   onReject,
   onDelete,
+  onConfirmDonation,
+  onCancelAppointment,
   isActioning,
 }: ApplicationCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const { id, status, message, created_at, donor } = application;
+  const { id, status, message, created_at, donor, appointments } = application;
 
   if (!donor) return null;
 
@@ -68,6 +72,17 @@ export function ApplicationCard({
     last_donation_date,
     health_declaration,
   });
+
+  const latestAppointment = appointments && appointments.length > 0
+    ? appointments[appointments.length - 1]
+    : null;
+
+  let appointmentDateStr = '';
+  if (latestAppointment && latestAppointment.scheduled_date) {
+    try {
+      appointmentDateStr = format(parseISO(latestAppointment.scheduled_date), 'eeee, MMM dd, yyyy • hh:mm a');
+    } catch (e) {}
+  }
 
   const warningReasons: string[] = [];
   if (!rules.age) {
@@ -134,6 +149,46 @@ export function ApplicationCard({
             <Text className="text-xs text-text-secondary mt-0.5">
               Age: {age} • Weight: {weight} kg
             </Text>
+            {latestAppointment && (
+              <View className={`flex-row items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md self-start border ${
+                latestAppointment.status === 'scheduled'
+                  ? 'bg-warning-bg border-warning/10'
+                  : latestAppointment.status === 'completed'
+                  ? 'bg-success-bg border-success/10'
+                  : 'bg-error-bg border-error/10'
+              }`}>
+                <Feather
+                  name={
+                    latestAppointment.status === 'scheduled'
+                      ? 'clock'
+                      : latestAppointment.status === 'completed'
+                      ? 'check-circle'
+                      : 'x-circle'
+                  }
+                  size={10}
+                  className={
+                    latestAppointment.status === 'scheduled'
+                      ? 'text-warning'
+                      : latestAppointment.status === 'completed'
+                      ? 'text-success'
+                      : 'text-error'
+                  }
+                />
+                <Text className={`text-[10px] font-bold ${
+                  latestAppointment.status === 'scheduled'
+                    ? 'text-warning'
+                    : latestAppointment.status === 'completed'
+                    ? 'text-success'
+                    : 'text-error'
+                }`}>
+                  {latestAppointment.status === 'scheduled'
+                    ? `Apt: ${format(parseISO(latestAppointment.scheduled_date), 'MMM dd, h:mm a')}`
+                    : latestAppointment.status === 'completed'
+                    ? 'Apt: Completed'
+                    : 'Apt: Cancelled'}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -229,6 +284,86 @@ export function ApplicationCard({
         </View>
       )}
 
+      {/* Appointment Info Box (Visible when appointment exists) */}
+      {latestAppointment && (
+        <View className="bg-surface-alt border border-border rounded-xl p-3 flex-col gap-2 mt-3">
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row items-center gap-1.5">
+              <Feather name="calendar" size={14} className="text-text-secondary" />
+              <Text className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                Appointment Details
+              </Text>
+            </View>
+            {/* Status Badge */}
+            <View className={`px-2 py-0.5 rounded-full ${
+              latestAppointment.status === 'scheduled'
+                ? 'bg-warning-bg'
+                : latestAppointment.status === 'completed'
+                ? 'bg-success-bg'
+                : 'bg-error-bg'
+            }`}>
+              <Text className={`text-[10px] font-bold capitalize ${
+                latestAppointment.status === 'scheduled'
+                  ? 'text-warning'
+                  : latestAppointment.status === 'completed'
+                  ? 'text-success'
+                  : 'text-error'
+              }`}>
+                {latestAppointment.status}
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-col gap-1.5 mt-1 bg-surface border border-divider rounded-lg p-2.5">
+            <View className="flex-row items-start">
+              <Text className="text-xs font-semibold text-text-secondary w-20">Date/Time:</Text>
+              <Text className="text-xs text-text-primary font-bold flex-1">
+                {appointmentDateStr || 'Not set'}
+              </Text>
+            </View>
+            {latestAppointment.location && (
+              <View className="flex-row items-start">
+                <Text className="text-xs font-semibold text-text-secondary w-20">Location:</Text>
+                <Text className="text-xs text-text-primary flex-1 selectable">
+                  {latestAppointment.location}
+                </Text>
+              </View>
+            )}
+            {latestAppointment.notes && (
+              <View className="flex-row items-start">
+                <Text className="text-xs font-semibold text-text-secondary w-20">Notes:</Text>
+                <Text className="text-xs text-text-secondary italic flex-1 selectable">
+                  "{latestAppointment.notes}"
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Inline Action Buttons for Scheduled Appointment */}
+          {latestAppointment.status === 'scheduled' && (
+            <View className="flex-row gap-2 mt-1.5 pt-1">
+              <Pressable
+                onPress={() => onCancelAppointment(latestAppointment.id)}
+                disabled={isActioning}
+                className="flex-1 bg-error-bg border border-error/10 rounded-xl min-h-[38px] px-3 items-center justify-center flex-row gap-1 active:opacity-75 disabled:opacity-50"
+              >
+                <Feather name="x-circle" size={12} className="text-error" />
+                <Text className="text-error font-semibold text-xs">Cancel Apt</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => onConfirmDonation(latestAppointment.id, latestAppointment.donor_id, blood_group)}
+                disabled={isActioning}
+                className="flex-1 bg-success rounded-xl min-h-[38px] px-3 items-center justify-center flex-row gap-1 active:opacity-75 disabled:opacity-50"
+              >
+                <Feather name="check-circle" size={12} color="#FFFFFF" />
+                <Text className="text-white font-semibold text-xs">Confirm Donation</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Bottom Row: Status Badge & Actions */}
       <View className="border-t border-divider pt-3 mt-1 flex-row justify-between items-center">
         {status === 'pending' ? (
@@ -267,13 +402,39 @@ export function ApplicationCard({
         ) : (
           <View className="flex-row justify-between w-full items-center">
             {status === 'approved' ? (
-              <Pressable
-                onPress={() => router.push(`/(hospital)/schedule/${id}` as any)}
-                className="bg-primary rounded-xl min-h-[44px] px-4 items-center justify-center flex-row gap-2 active:opacity-90"
-              >
-                <Feather name="calendar" size={14} color="#FFFFFF" />
-                <Text className="text-white font-semibold text-xs">Schedule Appointment</Text>
-              </Pressable>
+              latestAppointment ? (
+                latestAppointment.status === 'scheduled' ? (
+                  <Pressable
+                    onPress={() => router.push(`/(hospital)/schedule/${id}` as any)}
+                    className="bg-surface-alt border border-border rounded-xl min-h-[44px] px-4 items-center justify-center flex-row gap-2 active:opacity-90"
+                  >
+                    <Feather name="eye" size={14} className="text-text-secondary" />
+                    <Text className="text-text-secondary font-semibold text-xs">View/Edit Schedule</Text>
+                  </Pressable>
+                ) : latestAppointment.status === 'completed' ? (
+                  <View className="bg-success-bg border border-success/15 rounded-xl min-h-[44px] px-4 items-center justify-center flex-row gap-1.5">
+                    <Feather name="check-circle" size={14} className="text-success" />
+                    <Text className="text-success font-semibold text-xs">Donation Completed</Text>
+                  </View>
+                ) : (
+                  // Cancelled or other - allow scheduling again (Reschedule)
+                  <Pressable
+                    onPress={() => router.push(`/(hospital)/schedule/${id}` as any)}
+                    className="bg-primary rounded-xl min-h-[44px] px-4 items-center justify-center flex-row gap-2 active:opacity-90"
+                  >
+                    <Feather name="calendar" size={14} color="#FFFFFF" />
+                    <Text className="text-white font-semibold text-xs">Reschedule Appointment</Text>
+                  </Pressable>
+                )
+              ) : (
+                <Pressable
+                  onPress={() => router.push(`/(hospital)/schedule/${id}` as any)}
+                  className="bg-primary rounded-xl min-h-[44px] px-4 items-center justify-center flex-row gap-2 active:opacity-90"
+                >
+                  <Feather name="calendar" size={14} color="#FFFFFF" />
+                  <Text className="text-white font-semibold text-xs">Schedule Appointment</Text>
+                </Pressable>
+              )
             ) : (
               <Text className="text-xs text-text-secondary font-medium">Decision finalized</Text>
             )}

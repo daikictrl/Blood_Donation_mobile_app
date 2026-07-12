@@ -105,6 +105,32 @@ serve(async (req) => {
       }
       notificationData = { application_id: recordId, request_id: application.request_id };
 
+    } else if (type === 'new_application') {
+      // 5. Fetch Application details for new application alert (goes to hospital)
+      const { data: application, error: appError } = await supabase
+        .from('donor_applications')
+        .select('*, donor:donors(full_name, blood_group), blood_requests(hospital_id)')
+        .eq('id', recordId)
+        .single();
+
+      if (appError || !application) {
+        throw new Error(`Failed to fetch application details for new_application: ${appError?.message}`);
+      }
+
+      const donorName = application.donor?.full_name || 'A donor';
+      const bloodGroup = application.donor?.blood_group || '';
+      const hospitalId = application.blood_requests?.hospital_id;
+
+      if (!hospitalId) {
+        throw new Error(`No hospital_id found for blood request: ${application.request_id}`);
+      }
+
+      recipientIds = [hospitalId];
+      notificationType = 'new_application';
+      title = '📝 New Donor Application';
+      body = `${donorName} (${bloodGroup}) has applied to your blood request.`;
+      notificationData = { application_id: recordId, request_id: application.request_id };
+
     } else if (type === 'appointment') {
       // 3. Fetch Appointment details
       const { data: appointment, error: appointmentError } = await supabase

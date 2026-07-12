@@ -22,6 +22,8 @@ import { Image } from 'expo-image';
 
 import { useHospitalStore } from '@/stores/hospital.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { useNotificationStore } from '@/stores/notification.store';
+import { useRouter } from 'expo-router';
 
 // Zod validation schema for form inputs
 const hospitalProfileSchema = zod.object({
@@ -39,6 +41,8 @@ type FormValues = zod.infer<typeof hospitalProfileSchema>;
 export default function HospitalProfileScreen() {
   const { profile, isLoading, fetchProfile, updateProfile, uploadLogo, clearProfile } = useHospitalStore();
   const { signOut } = useAuthStore();
+  const router = useRouter();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -237,7 +241,7 @@ export default function HospitalProfileScreen() {
         >
           {/* Header */}
           <View className="mb-6 flex-row justify-between items-center">
-            <View className="flex-1 mr-2">
+            <View className="flex-grow flex-1 mr-4">
               <Text className="text-2xl font-bold text-text-primary">
                 {profile ? 'Institution Profile' : 'Complete Profile'}
               </Text>
@@ -245,6 +249,22 @@ export default function HospitalProfileScreen() {
                 {profile ? 'Manage your hospital details and location' : 'Enter details to start requesting blood'}
               </Text>
             </View>
+
+            {/* Bell Icon with Dynamic Badge */}
+            <Pressable
+              onPress={() => router.push('/(hospital)/notifications')}
+              className="p-2 relative active:opacity-75 mr-2"
+            >
+              <Feather name="bell" size={24} className="text-text-primary" />
+              {unreadCount > 0 && (
+                <View className="absolute right-1 top-1 bg-primary w-4.5 h-4.5 rounded-full items-center justify-center border border-surface">
+                  <Text className="text-[9px] font-bold text-white leading-none">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
             {profile && !isEditMode && (
               <Pressable
                 onPress={() => setIsEditMode(true)}

@@ -75,14 +75,14 @@ export async function registerPushToken(): Promise<string | null> {
       );
 
     if (error) {
-      console.error('Error upserting push token to database:', error);
+      console.log('Error upserting push token to database:', error);
       return null;
     }
 
     console.log('Push token successfully registered:', token);
     return token;
   } catch (error) {
-    console.error('Failed to register push token:', error);
+    console.log('Failed to register push token:', error);
     return null;
   }
 }
@@ -114,11 +114,11 @@ export async function unregisterPushToken(): Promise<void> {
       .eq('token', token);
 
     if (error) {
-      console.error('Error deleting push token on logout:', error);
+      console.log('Error deleting push token on logout:', error);
     } else {
       console.log('Push token unregistered successfully.');
     }
   } catch (error) {
-    console.error('Failed to unregister push token:', error);
+    console.log('Failed to unregister push token:', error);
   }
 }
