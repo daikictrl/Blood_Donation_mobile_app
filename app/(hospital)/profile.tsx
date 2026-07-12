@@ -27,8 +27,7 @@ import { useRouter } from 'expo-router';
 
 // Zod validation schema for form inputs
 const hospitalProfileSchema = zod.object({
-  name: zod.string().min(2, 'Hospital/Blood Bank name must be at least 2 characters'),
-  type: zod.enum(['hospital', 'blood_bank']),
+  name: zod.string().min(2, 'Hospital name must be at least 2 characters'),
   phone: zod.string().min(5, 'Phone number must be at least 5 digits'),
   address: zod.string().min(5, 'Address must be at least 5 characters'),
   latitude: zod.number().nullable().optional(),
@@ -59,7 +58,6 @@ export default function HospitalProfileScreen() {
     resolver: zodResolver(hospitalProfileSchema),
     defaultValues: {
       name: '',
-      type: 'hospital',
       phone: '',
       address: '',
       latitude: null,
@@ -77,7 +75,6 @@ export default function HospitalProfileScreen() {
     if (profile) {
       reset({
         name: profile.name,
-        type: profile.type,
         phone: profile.phone || '',
         address: profile.address || '',
         latitude: profile.latitude,
@@ -179,7 +176,6 @@ export default function HospitalProfileScreen() {
     try {
       await updateProfile({
         name: data.name,
-        type: data.type,
         phone: data.phone || null,
         address: data.address,
         latitude: data.latitude || null,
@@ -243,10 +239,10 @@ export default function HospitalProfileScreen() {
           <View className="mb-6 flex-row justify-between items-center">
             <View className="flex-grow flex-1 mr-4">
               <Text className="text-2xl font-bold text-text-primary">
-                {profile ? 'Institution Profile' : 'Complete Profile'}
+                {profile ? 'Hospital Profile' : 'Complete Profile'}
               </Text>
               <Text className="text-sm text-text-secondary mt-1">
-                {profile ? 'Manage your hospital details and location' : 'Enter details to start requesting blood'}
+                {profile ? 'Manage your hospital details and location' : 'Enter hospital details to start requesting blood'}
               </Text>
             </View>
 
@@ -275,7 +271,7 @@ export default function HospitalProfileScreen() {
             )}
           </View>
 
-          {/* Profile Card Header (Logo & Type) */}
+          {/* Profile Card Header */}
           <View className="bg-surface rounded-2xl p-5 border border-border shadow shadow-black/5 items-center mb-5">
             <Pressable onPress={handleSelectLogo} className="relative mb-3">
               <View className="w-24 h-24 rounded-full bg-border items-center justify-center overflow-hidden border border-border">
@@ -316,12 +312,12 @@ export default function HospitalProfileScreen() {
                 </View>
                 <View className="flex-row items-center mt-2 bg-primary/10 px-3 py-1 rounded-full">
                   <Text className="text-sm font-bold text-primary capitalize">
-                    {profile.type.replace('_', ' ')}
+                    Hospital
                   </Text>
                 </View>
               </>
             ) : (
-              <Text className="text-base text-text-secondary font-semibold">New Institution Registration</Text>
+              <Text className="text-base text-text-secondary font-semibold">New Hospital Registration</Text>
             )}
           </View>
 
@@ -331,14 +327,8 @@ export default function HospitalProfileScreen() {
               {/* Institution Details Card */}
               <View className="bg-surface rounded-2xl p-5 border border-border shadow shadow-black/5 gap-4">
                 <Text className="text-base font-semibold text-text-primary pb-2 border-b border-divider">
-                  Institution Details
+                  Hospital Details
                 </Text>
-
-                <View className="flex-row justify-between py-1">
-                  <Text className="text-sm text-text-secondary">Type</Text>
-                  <Text className="text-sm text-text-primary capitalize">{profile.type.replace('_', ' ')}</Text>
-                </View>
-
                 <View className="flex-row justify-between py-1">
                   <Text className="text-sm text-text-secondary">Phone Number</Text>
                   <Text className="text-sm text-text-primary">{profile.phone || 'Not provided'}</Text>
@@ -378,12 +368,12 @@ export default function HospitalProfileScreen() {
               {/* Form Card */}
               <View className="bg-surface rounded-2xl p-5 border border-border shadow shadow-black/5 gap-4">
                 <Text className="text-base font-semibold text-text-primary pb-2 border-b border-divider">
-                  {profile ? 'Edit Profile Details' : 'Institution Details'}
+                  {profile ? 'Edit Profile Details' : 'Hospital Details'}
                 </Text>
 
-                {/* Institution Name */}
+                {/* Hospital Name */}
                 <View>
-                  <Text className="text-sm font-semibold text-text-secondary mb-2">Institution Name</Text>
+                  <Text className="text-sm font-semibold text-text-secondary mb-2">Hospital Name</Text>
                   <Controller
                     control={control}
                     name="name"
@@ -405,42 +395,6 @@ export default function HospitalProfileScreen() {
                   )}
                 </View>
 
-                {/* Institution Type */}
-                <View>
-                  <Text className="text-sm font-semibold text-text-secondary mb-2">Type</Text>
-                  <Controller
-                    control={control}
-                    name="type"
-                    render={({ field: { value } }) => (
-                      <View className="flex-row gap-2">
-                        {[
-                          { key: 'hospital', label: 'Hospital' },
-                          { key: 'blood_bank', label: 'Blood Bank' }
-                        ].map((t) => {
-                          const isSelected = value === t.key;
-                          return (
-                            <Pressable
-                              key={t.key}
-                              onPress={() => setValue('type', t.key as any)}
-                              className={`flex-1 min-h-[44px] border rounded-xl items-center justify-center ${
-                                isSelected
-                                  ? 'bg-primary border-primary'
-                                  : 'bg-background border-border'
-                              }`}
-                            >
-                              <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-text-primary'}`}>
-                                {t.label}
-                              </Text>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-                    )}
-                  />
-                  {errors.type && (
-                    <Text className="text-xs text-primary mt-1">{errors.type.message}</Text>
-                  )}
-                </View>
 
                 {/* Phone Number */}
                 <View>

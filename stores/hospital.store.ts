@@ -70,7 +70,8 @@ export const useHospitalStore = create<HospitalStore>((set, get) => ({
         .maybeSingle();
 
       if (error) throw error;
-      set({ profile: data as HospitalProfile | null });
+      const profile = data ? ({ ...data, type: 'hospital' as const } as HospitalProfile) : null;
+      set({ profile });
     } catch (err: any) {
       set({ error: err.message || 'Failed to fetch profile' });
       throw err;
@@ -89,6 +90,7 @@ export const useHospitalStore = create<HospitalStore>((set, get) => ({
         id: user.id,
         email: user.email,
         ...profileData,
+        type: 'hospital' as const,
         updated_at: new Date().toISOString(),
       };
 

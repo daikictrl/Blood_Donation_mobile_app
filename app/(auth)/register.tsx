@@ -128,10 +128,10 @@ export default function RegisterScreen() {
         >
           <View className="mb-6">
             <Text className="text-2xl font-bold text-text-primary">
-              Create Donor Account
+              Create Your Donor Account
             </Text>
             <Text className="text-sm text-text-secondary mt-1">
-              Donor registration is open to everyone. Hospital access is handled through an authorized hospital account.
+              Donor registration is open to everyone.
             </Text>
           </View>
 
@@ -151,7 +151,7 @@ export default function RegisterScreen() {
               </View>
               <View className="flex-1">
                 <Text className="text-base font-semibold text-text-primary">
-                  Registering as a donor
+                  WELCOME TO SANTA MARIA
                 </Text>
                 <Text className="text-sm text-text-secondary mt-1">
                   This account can complete a health profile, browse compatible requests, and apply to donate.
